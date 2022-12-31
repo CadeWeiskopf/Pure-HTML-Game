@@ -1,0 +1,231 @@
+<html>
+    <head>
+        <style>
+            #canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            image-rendering: crisp-edges;
+            }
+        </style>
+        <script>
+            function init() {
+                const canvas = document.getElementById('canvas');
+                canvas.width = window.innerWidth;
+                canvas.height = window.innerHeight;
+            
+                // Set the size of the dot based on the dimensions of the canvas
+                size = Math.min(canvas.width, canvas.height) / 20;
+            }
+        </script>
+    </head>
+    <body onload="init()">
+        <canvas id="canvas"></canvas>
+        <script>
+            // Get the canvas element and set up the context
+            const canvas = document.getElementById('canvas');
+            const ctx = canvas.getContext('2d');
+            
+            // Set the starting position of the dot
+            let x = 50;
+            let y = 50;
+            
+            // Set the speed of the dot
+            const speed = 2;
+            
+            // Set the size of the dot
+            let size = 10;
+            
+            // Set the strength of the gravity
+            const gravity = 0.1;
+            
+            // Set the initial vertical velocity of the dot
+            let yVelocity = 0;
+            
+            // Set the jump strength of the dot
+            const jumpStrength = 4;
+            
+            // Set the height of the ground
+            const groundHeight = 30;
+            
+                // Keep track of the state of the arrow keys
+                let leftKeyDown = false;
+            let rightKeyDown = false;
+            
+            const walls = [];
+            
+            let gameCounter = 0;
+            function addWall() {
+                gameCounter++;
+            // Calculate the gap between the walls based on the size of the dot
+            const gap = size * 8 - gameCounter / 10;
+            
+            // Calculate the length of the top wall based on the gap and the height of the canvas
+            const topLength = gap / 2 + Math.random() * (canvas.height - gap) / 2;
+            // Calculate the length of the bottom wall based on the gap and the height of the canvas
+            const bottomLength = canvas.height - groundHeight - topLength - gap;
+            
+            // Calculate the y position of the top wall
+            const topY = 0;
+            // Calculate the y position of the bottom wall
+            const bottomY = canvas.height - groundHeight - bottomLength;
+            
+            // Add the top and bottom walls to the array
+            walls.push({ x: canvas.width, y: topY, length: topLength });
+            walls.push({ x: canvas.width, y: bottomY, length: bottomLength });
+            }
+            
+            
+            
+            // Call the addWall function every 1000 milliseconds (1 second)
+            setInterval(addWall, 1000);
+            
+            function updateWalls() {
+                // Loop through the walls array and update the x position of each wall
+                for (let i = 0; i < walls.length; i++) {
+                    walls[i].x -= speed;
+                }
+            }
+            
+            function drawWalls() {
+                // Loop through the walls array and draw each wall
+                for (let i = 0; i < walls.length; i++) {
+                    ctx.fillRect(walls[i].x, walls[i].y, 20, walls[i].length);
+                }
+            }
+            
+            let gameOver = false;
+            function checkCollision() {
+                // Set a flag to keep track of whether the dot is colliding with a wall
+                let isColliding = false;
+            
+                // Loop through the walls array and check if the dot is colliding with any of the walls
+                for (let i = 0; i < walls.length; i++) {
+                    if (x + size > walls[i].x && x - size < walls[i].x + 20 && y + size > walls[i].y && y - size < walls[i].y + walls[i].length) {
+                        // If the dot is colliding with a wall, set the isColliding flag to true
+                        isColliding = true;
+                        break;
+                    }
+                }
+            
+                // If the dot is colliding with a wall, set gameOver to true
+                if (isColliding) {
+                    gameOver = true;
+                }
+            
+            }
+            
+            const startTime = Date.now();
+
+            // Set up the game loop
+            function gameLoop(currentTime) {
+              // Clear the canvas
+              ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+              // Draw the ground
+              ctx.fillStyle = '#000000';
+              ctx.fillRect(0, canvas.height - groundHeight, canvas.width, groundHeight);
+            
+              // Apply gravity to the dot's vertical velocity
+              yVelocity += gravity;
+            
+              // Update the dot's position based on its velocity and the state of the arrow keys
+              y += yVelocity;
+              if (leftKeyDown) {
+                x -= speed;
+              }
+              if (rightKeyDown) {
+                x += speed;
+              }
+              
+              // Constrain the dot's movement to within the canvas
+                if (x + size > canvas.width) {
+                    x = canvas.width - size;
+                } else if (x - size < 0) {
+                    x = size;
+                }
+              
+              // If the dot is colliding with the ground, stop it from falling through
+              if (y + size > canvas.height - groundHeight) {
+                y = canvas.height - groundHeight - size;
+                yVelocity = 0;
+              } else if (y - size < 0) {
+                    y = size;
+                }
+                // Update the walls and draw them
+                updateWalls();
+                drawWalls();
+
+                // Set a flag to keep track of whether the dot is colliding with a wall
+                let isColliding = false;
+            
+                // Loop through the walls array and check if the dot is colliding with any of the walls
+                for (let i = 0; i < walls.length; i++) {
+                    if (x + size > walls[i].x && x - size < walls[i].x + 20 && y + size > walls[i].y && y - size < walls[i].y + walls[i].length) {
+                        // If the dot is colliding with a wall, set the isColliding flag to true
+                        isColliding = true;
+                        break;
+                    }
+                }
+            
+                ctx.font = '20px Arial';
+                ctx.fillStyle = '#00000';
+                ctx.fillText((Date.now() - startTime)/1000, 10, 30);
+                // If the dot is colliding with a wall, set gameOver to true
+                if (isColliding) {
+                    gameOver = true;
+                }
+            
+              // Draw the dot at its new position
+              ctx.beginPath();
+              ctx.fillRect(x - size, y - size, size * 2, size * 2);
+              ctx.fill();
+            
+              // Call the game loop function again on the next frame
+              if (!gameOver){
+                requestAnimationFrame(gameLoop);
+              }
+            }
+            
+            // Start the game loop
+            gameLoop();
+            
+            // Handle arrow key down events
+            document.addEventListener('keydown', event => {
+              switch (event.key) {
+                case 'ArrowLeft':
+                  leftKeyDown = true;
+                  break;
+                case 'ArrowRight':
+                  rightKeyDown = true;
+                  break;
+                case ' ':
+                  // Jump
+                  yVelocity = -jumpStrength;
+                  break;
+              }
+            });
+            
+            // Handle arrow key up events
+            document.addEventListener('keyup', event => {
+              switch (event.key) {
+                case 'ArrowLeft':
+                  leftKeyDown = false;
+                  break;
+                case 'ArrowRight':
+                  rightKeyDown = false;
+                  break;
+              }
+            });
+            
+            // Update the canvas size and dot size when the window is resized
+            window.addEventListener('resize', () => {
+              canvas.width = window.innerWidth;
+              canvas.height = window.innerHeight;
+              size = Math.min(canvas.width, canvas.height) / 20;
+            });
+        </script>
+    </body>
+</html>
